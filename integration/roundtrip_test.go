@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/natalie-o-perret/go-sftp/client"
-	"github.com/natalie-o-perret/go-sftp/sftp"
 	"github.com/natalie-o-perret/go-sftp/server"
 	"github.com/natalie-o-perret/go-sftp/server/backend/osfs"
+	"github.com/natalie-o-perret/go-sftp/sftp"
 )
 
 // pipe returns two io.ReadWriteClosers connected to each other. The
@@ -37,12 +37,12 @@ func TestStatAndRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	cli := runServer(t, root)
-	defer cli.Close()
+	defer func() { _ = cli.Close() }()
 	c, err := client.New(cli)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -55,7 +55,7 @@ func TestStatAndRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	got, err := io.ReadAll(f)
 	if err != nil {
 		t.Fatal(err)
@@ -68,12 +68,12 @@ func TestStatAndRead(t *testing.T) {
 func TestCreateWriteRead(t *testing.T) {
 	root := t.TempDir()
 	cli := runServer(t, root)
-	defer cli.Close()
+	defer func() { _ = cli.Close() }()
 	c, err := client.New(cli)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -109,12 +109,12 @@ func TestReadDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	cli := runServer(t, root)
-	defer cli.Close()
+	defer func() { _ = cli.Close() }()
 	c, err := client.New(cli)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -131,12 +131,12 @@ func TestReadDir(t *testing.T) {
 func TestMkdirAndRemove(t *testing.T) {
 	root := t.TempDir()
 	cli := runServer(t, root)
-	defer cli.Close()
+	defer func() { _ = cli.Close() }()
 	c, err := client.New(cli)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

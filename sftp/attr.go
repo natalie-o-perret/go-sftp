@@ -19,11 +19,11 @@ type FileAttr struct {
 
 // AttributeFlag bits follow draft-ietf-secsh-filexfer-13 § 6.4.
 const (
-	attrSize  uint32 = 0x00000001
+	attrSize   uint32 = 0x00000001
 	attrUIDGID uint32 = 0x00000002
-	attrMode  uint32 = 0x00000004
-	attrMtime uint32 = 0x00000008
-	attrAtime uint32 = 0x00000010
+	attrMode   uint32 = 0x00000004
+	attrMtime  uint32 = 0x00000008
+	attrAtime  uint32 = 0x00000010
 )
 
 // Encode serializes a FileAttr into the SSH_FXP_ATTRS wire form.

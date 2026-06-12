@@ -84,10 +84,10 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 		return err
 	}
 	var (
-		mu       sync.Mutex
-		handles  = map[FileHandle]FileHandle{}
-		drained  = map[FileHandle]bool{}
-		nextID   uint32
+		mu      sync.Mutex
+		handles = map[FileHandle]FileHandle{}
+		drained = map[FileHandle]bool{}
+		nextID  uint32
 	)
 	newHandle := func(real FileHandle) FileHandle {
 		mu.Lock()
@@ -147,13 +147,13 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			}
 			real, err := s.backend.Open(path, pFlags)
 			if err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
 			h := newHandle(real)
 			payload := sftp.AppendUint32(nil, uint32(id))
 			payload = sftp.AppendString(payload, string(h))
-			sftp.WritePacket(ch, sftp.TypeHandle, payload)
+			_ = sftp.WritePacket(ch, sftp.TypeHandle, payload)
 		case sftp.TypeClose:
 			h, _, err := sftp.ReadString(rest, 0)
 			if err != nil {
@@ -161,12 +161,12 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			}
 			real, err := resolve(FileHandle(h))
 			if err != nil {
-				s.sendStatus(ch, id, sftp.StatusFailure, err)
+				_ = s.sendStatus(ch, id, sftp.StatusFailure, err)
 				continue
 			}
-			s.backend.Close(real)
+			_ = s.backend.Close(real)
 			drop(FileHandle(h))
-			s.sendStatus(ch, id, sftp.StatusOK, "")
+			_ = s.sendStatus(ch, id, sftp.StatusOK, "")
 		case sftp.TypeRead:
 			h, off, err := sftp.ReadString(rest, 0)
 			if err != nil {
@@ -182,23 +182,23 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			}
 			real, err := resolve(FileHandle(h))
 			if err != nil {
-				s.sendStatus(ch, id, sftp.StatusFailure, err)
+				_ = s.sendStatus(ch, id, sftp.StatusFailure, err)
 				continue
 			}
 			buf := make([]byte, size)
 			n, err := s.backend.Read(real, offset, buf)
 			if err == io.EOF {
-				s.sendStatus(ch, id, sftp.StatusEOF, "")
+				_ = s.sendStatus(ch, id, sftp.StatusEOF, "")
 				continue
 			}
 			if err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
 			payload := sftp.AppendUint32(nil, uint32(id))
 			payload = sftp.AppendUint32(payload, uint32(n))
 			payload = append(payload, buf[:n]...)
-			sftp.WritePacket(ch, sftp.TypeData, payload)
+			_ = sftp.WritePacket(ch, sftp.TypeData, payload)
 		case sftp.TypeWrite:
 			h, off, err := sftp.ReadString(rest, 0)
 			if err != nil {
@@ -208,21 +208,21 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			if err != nil {
 				return s.sendStatus(ch, id, sftp.StatusBadMessage, err)
 			}
-			data, off, err := sftp.ReadString(rest, off)
+			data, _, err := sftp.ReadString(rest, off)
 			if err != nil {
 				return s.sendStatus(ch, id, sftp.StatusBadMessage, err)
 			}
 			real, err := resolve(FileHandle(h))
 			if err != nil {
-				s.sendStatus(ch, id, sftp.StatusFailure, err)
+				_ = s.sendStatus(ch, id, sftp.StatusFailure, err)
 				continue
 			}
 			_, err = s.backend.Write(real, offset, []byte(data))
 			if err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
-			s.sendStatus(ch, id, sftp.StatusOK, "")
+			_ = s.sendStatus(ch, id, sftp.StatusOK, "")
 		case sftp.TypeStat:
 			path, _, err := sftp.ReadString(rest, 0)
 			if err != nil {
@@ -230,10 +230,10 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			}
 			st, err := s.backend.Stat(path)
 			if err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
-			s.sendAttrs(ch, id, st)
+			_ = s.sendAttrs(ch, id, st)
 		case sftp.TypeLstat:
 			path, _, err := sftp.ReadString(rest, 0)
 			if err != nil {
@@ -241,10 +241,10 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			}
 			st, err := s.backend.Lstat(path)
 			if err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
-			s.sendAttrs(ch, id, st)
+			_ = s.sendAttrs(ch, id, st)
 		case sftp.TypeOpendir:
 			path, _, err := sftp.ReadString(rest, 0)
 			if err != nil {
@@ -252,7 +252,7 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			}
 			_, err = s.backend.Readdir(path)
 			if err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
 			// We don't actually keep a server-side directory handle;
@@ -261,25 +261,25 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 			h := newHandle(real)
 			payload := sftp.AppendUint32(nil, uint32(id))
 			payload = sftp.AppendString(payload, string(h))
-			sftp.WritePacket(ch, sftp.TypeHandle, payload)
+			_ = sftp.WritePacket(ch, sftp.TypeHandle, payload)
 		case sftp.TypeReaddir:
 			h, _, err := sftp.ReadString(rest, 0)
 			if err != nil {
 				return s.sendStatus(ch, id, sftp.StatusBadMessage, err)
 			}
 			if isDrained(FileHandle(h)) {
-				s.sendStatus(ch, id, sftp.StatusEOF, "")
+				_ = s.sendStatus(ch, id, sftp.StatusEOF, "")
 				continue
 			}
 			real, err := resolve(FileHandle(h))
 			if err != nil {
-				s.sendStatus(ch, id, sftp.StatusFailure, err)
+				_ = s.sendStatus(ch, id, sftp.StatusFailure, err)
 				continue
 			}
 			path := string(real)[4:] // strip "dir:" prefix
 			entries, err := s.backend.Readdir(path)
 			if err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
 			payload := sftp.AppendUint32(nil, uint32(id))
@@ -292,7 +292,7 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 				}
 				payload = append(payload, a.Encode()...)
 			}
-			sftp.WritePacket(ch, sftp.TypeName, payload)
+			_ = sftp.WritePacket(ch, sftp.TypeName, payload)
 			markDrained(FileHandle(h))
 		case sftp.TypeMkdir:
 			path, _, err := sftp.ReadString(rest, 0)
@@ -300,30 +300,30 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 				return s.sendStatus(ch, id, sftp.StatusBadMessage, err)
 			}
 			if err := s.backend.Mkdir(path); err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
-			s.sendStatus(ch, id, sftp.StatusOK, "")
+			_ = s.sendStatus(ch, id, sftp.StatusOK, "")
 		case sftp.TypeRmdir:
 			path, _, err := sftp.ReadString(rest, 0)
 			if err != nil {
 				return s.sendStatus(ch, id, sftp.StatusBadMessage, err)
 			}
 			if err := s.backend.Rmdir(path); err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
-			s.sendStatus(ch, id, sftp.StatusOK, "")
+			_ = s.sendStatus(ch, id, sftp.StatusOK, "")
 		case sftp.TypeRemove:
 			path, _, err := sftp.ReadString(rest, 0)
 			if err != nil {
 				return s.sendStatus(ch, id, sftp.StatusBadMessage, err)
 			}
 			if err := s.backend.Remove(path); err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
-			s.sendStatus(ch, id, sftp.StatusOK, "")
+			_ = s.sendStatus(ch, id, sftp.StatusOK, "")
 		case sftp.TypeRename:
 			from, off, err := sftp.ReadString(rest, 0)
 			if err != nil {
@@ -334,12 +334,12 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 				return s.sendStatus(ch, id, sftp.StatusBadMessage, err)
 			}
 			if err := s.backend.Rename(from, to); err != nil {
-				s.sendStatus(ch, id, mapErr(err), err.Error())
+				_ = s.sendStatus(ch, id, mapErr(err), err.Error())
 				continue
 			}
-			s.sendStatus(ch, id, sftp.StatusOK, "")
+			_ = s.sendStatus(ch, id, sftp.StatusOK, "")
 		default:
-			s.sendStatus(ch, id, sftp.StatusOpUnsupported, "unsupported")
+			_ = s.sendStatus(ch, id, sftp.StatusOpUnsupported, "unsupported")
 		}
 	}
 }
@@ -347,10 +347,11 @@ func (s *Server) Serve(ch io.ReadWriteCloser) error {
 func (s *Server) sendStatus(ch io.Writer, id sftp.RequestID, code sftp.StatusCode, msg interface{}) error {
 	m := ""
 	if msg != nil {
-		if s, ok := msg.(string); ok {
-			m = s
-		} else if e, ok := msg.(error); ok {
-			m = e.Error()
+		switch v := msg.(type) {
+		case string:
+			m = v
+		case error:
+			m = v.Error()
 		}
 	}
 	return sftp.WritePacket(ch, sftp.TypeStatus, sftp.EncodeStatus(id, code, m, ""))

@@ -43,7 +43,7 @@ func main() {
 	}
 
 	srvCfg := &ssh.ServerConfig{
-		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+		PasswordCallback: func(_ ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			if string(pass) == "demo" {
 				return &ssh.Permissions{}, nil
 			}
@@ -68,17 +68,17 @@ func main() {
 }
 
 func handle(conn net.Conn, cfg *ssh.ServerConfig, root string) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	sconn, chans, reqs, err := ssh.NewServerConn(conn, cfg)
 	if err != nil {
 		log.Printf("handshake: %v", err)
 		return
 	}
-	defer sconn.Close()
+	defer func() { _ = sconn.Close() }()
 	go ssh.DiscardRequests(reqs)
 	for ch := range chans {
 		if ch.ChannelType() != "session" {
-			ch.Reject(ssh.UnknownChannelType, "unknown channel type")
+			_ = ch.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
 		ch, requests, err := ch.Accept()
@@ -91,7 +91,7 @@ func handle(conn net.Conn, cfg *ssh.ServerConfig, root string) {
 }
 
 func handleSession(ch ssh.Channel, requests <-chan *ssh.Request, root string) {
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 	for req := range requests {
 		switch req.Type {
 		case "subsystem":
@@ -99,21 +99,21 @@ func handleSession(ch ssh.Channel, requests <-chan *ssh.Request, root string) {
 				Name string
 			}
 			if err := ssh.Unmarshal(req.Payload, &payload); err != nil {
-				req.Reply(false, nil)
+				_ = req.Reply(false, nil)
 				continue
 			}
 			if payload.Name != "sftp" {
-				req.Reply(false, nil)
+				_ = req.Reply(false, nil)
 				continue
 			}
-			req.Reply(true, nil)
+			_ = req.Reply(true, nil)
 			srv := server.New(osfs.New(root))
 			if err := srv.Serve(ch); err != nil && !errors.Is(err, io.EOF) {
 				log.Printf("sftp serve: %v", err)
 			}
 			return
 		default:
-			req.Reply(false, nil)
+			_ = req.Reply(false, nil)
 		}
 	}
 }

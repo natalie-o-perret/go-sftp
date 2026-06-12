@@ -34,11 +34,11 @@ const (
 	TypeSymlink  Type = 20
 	TypeStat     Type = 17
 	// 101-107 are reply messages.
-	TypeStatus Type = 101
-	TypeHandle Type = 102
-	TypeData   Type = 103
-	TypeName   Type = 104
-	TypeAttrs  Type = 105
+	TypeStatus   Type = 101
+	TypeHandle   Type = 102
+	TypeData     Type = 103
+	TypeName     Type = 104
+	TypeAttrs    Type = 105
 	TypeExtended Type = 200
 )
 
@@ -56,13 +56,13 @@ const (
 type StatusCode uint32
 
 const (
-	StatusOK              StatusCode = 0
-	StatusEOF             StatusCode = 1
-	StatusNoSuchFile      StatusCode = 2
+	StatusOK               StatusCode = 0
+	StatusEOF              StatusCode = 1
+	StatusNoSuchFile       StatusCode = 2
 	StatusPermissionDenied StatusCode = 3
-	StatusFailure         StatusCode = 4
-	StatusBadMessage      StatusCode = 5
-	StatusNoConnection    StatusCode = 6
-	StatusConnectionLost  StatusCode = 7
-	StatusOpUnsupported   StatusCode = 8
+	StatusFailure          StatusCode = 4
+	StatusBadMessage       StatusCode = 5
+	StatusNoConnection     StatusCode = 6
+	StatusConnectionLost   StatusCode = 7
+	StatusOpUnsupported    StatusCode = 8
 )

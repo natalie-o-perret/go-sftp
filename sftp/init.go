@@ -11,19 +11,6 @@ import (
 // originating packet in every reply.
 type RequestID uint32
 
-// nextRequestID returns a fresh request ID, starting at 1. The
-// returned value wraps around to 1 on overflow, never returning 0
-// (which is reserved for server-initiated messages).
-func nextRequestID(counter *uint32) RequestID {
-	for {
-		*counter++
-		if *counter == 0 {
-			*counter = 1
-		}
-		return RequestID(*counter)
-	}
-}
-
 // NewRequestIDSource returns a function that yields a fresh request
 // ID on every call. The source is safe for concurrent use.
 func NewRequestIDSource() func() RequestID {

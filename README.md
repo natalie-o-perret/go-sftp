@@ -1,5 +1,7 @@
 # go-sftp
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/natalie-o-perret/go-sftp.svg)](https://pkg.go.dev/github.com/natalie-o-perret/go-sftp)
+
 A focused, embeddable SFTP library and server in Go.
 
 > SSH File Transfer Protocol (draft-ietf-secsh-filexfer-13) client

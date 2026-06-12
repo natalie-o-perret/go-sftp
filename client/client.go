@@ -132,23 +132,23 @@ func (c *Client) do(ctx context.Context, t sftp.Type, payload []byte) (sftp.Pack
 	}
 }
 
-// open sends OPEN and returns the handle and attributes.
-func (c *Client) open(ctx context.Context, path string, pFlags uint32) (string, sftp.FileAttr, error) {
+// open sends OPEN and returns the file handle.
+func (c *Client) open(ctx context.Context, path string, pFlags uint32) (string, error) {
 	payload := sftp.AppendString(nil, path)
 	payload = sftp.AppendUint32(payload, pFlags)
 	pkt, err := c.do(ctx, sftp.TypeOpen, payload)
 	if err != nil {
-		return "", sftp.FileAttr{}, err
+		return "", err
 	}
 	if pkt.Type == sftp.TypeStatus {
 		_, code, msg, _ := sftp.DecodeStatus(pkt.Payload)
-		return "", sftp.FileAttr{}, &StatusError{Code: code, Msg: msg}
+		return "", &StatusError{Code: code, Msg: msg}
 	}
 	if pkt.Type != sftp.TypeHandle {
-		return "", sftp.FileAttr{}, fmt.Errorf("sftp: OPEN: unexpected reply %d", pkt.Type)
+		return "", fmt.Errorf("sftp: OPEN: unexpected reply %d", pkt.Type)
 	}
 	handle, _, err := sftp.ReadString(pkt.Payload, 4)
-	return handle, sftp.FileAttr{}, err
+	return handle, err
 }
 
 // Open opens path for reading.
@@ -167,7 +167,7 @@ func (c *Client) Append(ctx context.Context, path string) (*File, error) {
 }
 
 func (c *Client) openFile(ctx context.Context, path string, pFlags uint32) (*File, error) {
-	handle, _, err := c.open(ctx, path, pFlags)
+	handle, err := c.open(ctx, path, pFlags)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +279,7 @@ func (c *Client) ReadDir(ctx context.Context, dir string) ([]DirEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer c.CloseHandle(ctx, handle)
+	defer func() { _ = c.CloseHandle(ctx, handle) }()
 	var entries []DirEntry
 	for {
 		payload := sftp.AppendString(nil, handle)
